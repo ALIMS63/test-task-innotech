@@ -10,6 +10,9 @@ import {
     Title, Page
 } from './styled';
 
+interface Rates {
+    [key: string]: number;
+}
 
 const App: FC = () => {
     const [fromSum, setFromSum] = useState<string>('');
@@ -18,7 +21,7 @@ const App: FC = () => {
     const [fromCurrency, setFromCurrency] = useState<string>('');
     const [toCurrency, setToCurrency] = useState<string>('');
 
-    const [rates, setRates] = useState<string[]>([]);
+    const [rates, setRates] = useState<Rates>({});
 
     const getData = async () => {
         try {
@@ -26,7 +29,7 @@ const App: FC = () => {
             const json = await response.json();
             console.log('json:', json);
             setFromCurrency(json.base);
-            setRates(Object.keys(json.rates));
+            setRates(json.rates);
         } catch (error) {
             console.log(error);
         }
@@ -38,13 +41,22 @@ const App: FC = () => {
 
     useEffect(() => {
         const intervalCall = setInterval(() => {
-          getData();
+            getData();
         }, 60000); // Каждую минуту выполняем новый запрос на обновление данных
         return () => {
-          clearInterval(intervalCall);
+            clearInterval(intervalCall);
         };
-      }, []);
+    }, []);
 
+    const handleFromCurrencyChange = (value: string) => {
+        setToSum(String(rates[value] / rates[toCurrency]));
+        setFromCurrency(value);
+    }
+
+    const handleToCurrencyChange = (value: string) => {
+        setToSum(String(+fromSum * rates[value]));
+        setToCurrency(value);
+    }
     return (
         <>
             <GlobalStyle />
@@ -55,9 +67,9 @@ const App: FC = () => {
                         <InnerBlock>
                             <Dropdown
                                 placeholder="Исходная валюта не выбрана"
-                                options={rates}
+                                options={Object.keys(rates)}
                                 selectedOption={fromCurrency}
-                                setSelectedOption={(value: string) => setFromCurrency(value)}
+                                setSelectedOption={handleFromCurrencyChange}
                             />
                             <Input
                                 required
@@ -65,15 +77,18 @@ const App: FC = () => {
                                 name="fromSum"
                                 value={
                                     fromSum.split('.').length > 1
-                                           ? `${fromSum.split('.')[0].replace(/(\d)(?=(\d{3})+$)/g, '$1,')}.${fromSum.split('.')[1]
-                                           }`
-                                           : `${fromSum.replace(/(\d)(?=(\d{3})+$)/g, '$1,')}`
+                                        ? `${fromSum.split('.')[0].replace(/(\d)(?=(\d{3})+$)/g, '$1,')}.${fromSum.split('.')[1]
+                                        }`
+                                        : `${fromSum.replace(/(\d)(?=(\d{3})+$)/g, '$1,')}`
                                 }
                                 onChange={(e: ChangeEvent<HTMLInputElement>) => {
                                     const value = e.target.value.replaceAll(',', '').replace(/[^\d.-]+/g, '');
                                     if (value.length > 1 && value[0] === '0') return;
                                     setFromSum(value);
-                                  }}
+                                    if (fromCurrency && toCurrency) {
+                                        setToSum(String(+value * rates[toCurrency]));
+                                    }
+                                }}
                             />
                         </InnerBlock>
 
@@ -82,9 +97,9 @@ const App: FC = () => {
                         <InnerBlock>
                             <Dropdown
                                 placeholder="Валюта конвертации не выбрана"
-                                options={rates}
+                                options={Object.keys(rates)}
                                 selectedOption={toCurrency}
-                                setSelectedOption={(val: string) => setToCurrency(val)}
+                                setSelectedOption={handleToCurrencyChange}
                             />
                             <Input
                                 required
@@ -92,16 +107,18 @@ const App: FC = () => {
                                 name="toSum"
                                 value={
                                     toSum.split('.').length > 1
-                                           ? `${toSum.split('.')[0].replace(/(\d)(?=(\d{3})+$)/g, '$1,')}.${toSum.split('.')[1]
-                                           }`
-                                           : `${toSum.replace(/(\d)(?=(\d{3})+$)/g, '$1,')}`
-                               }
-                               onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                   const value = e.target.value.replaceAll(',', '').replace(/[^\d.-]+/g, '');
-                                   setFromSum('');
-                                   if (value.length > 1 && value[0] === '0') return;
-                                   setToSum(value);
-                                 }}
+                                        ? `${toSum.split('.')[0].replace(/(\d)(?=(\d{3})+$)/g, '$1,')}.${toSum.split('.')[1]
+                                        }`
+                                        : `${toSum.replace(/(\d)(?=(\d{3})+$)/g, '$1,')}`
+                                }
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                    const value = e.target.value.replaceAll(',', '').replace(/[^\d.-]+/g, '');
+                                    if (value.length > 1 && value[0] === '0') return;
+                                    setToSum(value);
+                                    if (fromCurrency && toCurrency) {
+                                        setFromSum(String(+value / rates[toCurrency]));
+                                    }
+                                }}
                             />
                         </InnerBlock>
                     </ContentWrapper>

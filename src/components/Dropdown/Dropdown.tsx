@@ -1,7 +1,7 @@
 import { FC, useRef, useState } from 'react';
 import styled from 'styled-components';
 import Scrollbars from "react-custom-scrollbars";
-import useOnClickOutside from '../../hooks/useOutsideHook';
+import useOnClickOutside from '../../helpers/useOutsideHook';
 import { Arrow, DropDownContainer, DropDownHeader, ListItem, SelectList, StrokeBottom, Text } from '../../styled';
 
 type DropdownProps = {

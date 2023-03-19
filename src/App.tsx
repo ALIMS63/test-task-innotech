@@ -9,6 +9,7 @@ import {
     InnerBlock,
     Title, Page
 } from './styled';
+import { useDebounce } from './helpers/useDebounce';
 
 interface Rates {
     [key: string]: number;
@@ -22,6 +23,9 @@ const App: FC = () => {
     const [toCurrency, setToCurrency] = useState<string>('');
 
     const [rates, setRates] = useState<Rates>({});
+
+    const debouncedFromSum = useDebounce<string>(fromSum, 500)
+    const debouncedToSum = useDebounce<string>(toSum, 500)
 
     const getData = async () => {
         try {
@@ -43,6 +47,7 @@ const App: FC = () => {
         const intervalCall = setInterval(() => {
             getData();
         }, 60000); // Каждую минуту выполняем новый запрос на обновление данных
+
         return () => {
             clearInterval(intervalCall);
         };
@@ -57,6 +62,32 @@ const App: FC = () => {
         setToSum(String(+fromSum * rates[value]));
         setToCurrency(value);
     }
+
+    const handleFromSumChange = (e: ChangeEvent<HTMLInputElement>) => {
+        console.log(111, fromSum);
+        const value = e.target.value.replaceAll(',', '').replace(/[^\d.-]+/g, '');
+        if (value.length > 1 && value[0] === '0') return;
+        setFromSum(value);
+    }
+
+    const handleToSumChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replaceAll(',', '').replace(/[^\d.-]+/g, '');
+        if (value.length > 1 && value[0] === '0') return;
+        setToSum(value);
+    }
+
+    useEffect(() => {
+        if (fromCurrency && toCurrency) {
+            setToSum(String(+fromSum * rates[toCurrency]));
+        }
+    }, [debouncedFromSum])
+
+    useEffect(() => {
+        if (fromCurrency && toCurrency) {
+            setFromSum(String(+toSum / rates[toCurrency]));
+        }
+    }, [debouncedToSum])
+
     return (
         <>
             <GlobalStyle />
@@ -81,14 +112,7 @@ const App: FC = () => {
                                         }`
                                         : `${fromSum.replace(/(\d)(?=(\d{3})+$)/g, '$1,')}`
                                 }
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                    const value = e.target.value.replaceAll(',', '').replace(/[^\d.-]+/g, '');
-                                    if (value.length > 1 && value[0] === '0') return;
-                                    setFromSum(value);
-                                    if (fromCurrency && toCurrency) {
-                                        setToSum(String(+value * rates[toCurrency]));
-                                    }
-                                }}
+                                onChange={handleFromSumChange}
                             />
                         </InnerBlock>
 
@@ -111,14 +135,7 @@ const App: FC = () => {
                                         }`
                                         : `${toSum.replace(/(\d)(?=(\d{3})+$)/g, '$1,')}`
                                 }
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                    const value = e.target.value.replaceAll(',', '').replace(/[^\d.-]+/g, '');
-                                    if (value.length > 1 && value[0] === '0') return;
-                                    setToSum(value);
-                                    if (fromCurrency && toCurrency) {
-                                        setFromSum(String(+value / rates[toCurrency]));
-                                    }
-                                }}
+                                onChange={handleToSumChange}
                             />
                         </InnerBlock>
                     </ContentWrapper>

@@ -31,7 +31,6 @@ export const Input: FC<IProps> = (props: IProps): ReactElement => {
     return (
         <InputWrapper>
             <InputUI
-                // pattern="^\d*(\.\d{0,2})?$"
                 min="0"
                 step=".00001"
                 className={className}
@@ -43,7 +42,7 @@ export const Input: FC<IProps> = (props: IProps): ReactElement => {
                 readOnly={readOnly}
                 type={type}
                 required={required}
-                // autoComplete={'off'}
+                autoComplete={'off'}
                 {...rest}
             />
         </InputWrapper>
